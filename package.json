@@ -1,7 +1,7 @@
 {
-  "name": "assignment4",
+  "name": "mongo-chatroom",
   "version": "1.0.0",
-  "description": "Stencil code for BrownCS1320 Assignment4",
+  "description": "Chatroom created using Node/Express.js and Mongo DB",
   "main": "server.js",
   "scripts": {
     "start": "nodemon server.js"
@@ -9,9 +9,12 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "body-parser": "^1.20.2",
     "cookie-parser": "^1.4.4",
+    "dotenv": "^16.4.5",
     "express": "^4.17.1",
-    "express-handlebars": "^3.1.0"
+    "express-handlebars": "^3.1.0",
+    "mongodb": "^6.7.0"
   },
   "devDependencies": {
     "eslint": "^6.8.0",
