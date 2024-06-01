@@ -13,11 +13,11 @@ const bodyParser = require('body-parser')
     const client = new MongoClient(process.env.DATABASE_URL);
     await client.connect()
     .then(console.log("connected to database"))
-
-
-    await client.close();
+    
+    var db = client.db('Mongo-Chatroom');
+    return db;
+    //await client.close();
   }
-  run();
 
 // import handlers
 const homeHandler = require('./controllers/home.js');
@@ -47,11 +47,43 @@ app.get('/', homeHandler.getHome);
 // create route for the room information
 app.get('/rooms', (request, response) => {
     const roomData = [
-        { roomName : "room1" },
-        { roomName : "room2" },
+        {   roomName : "room1",
+            id : 111111,
+            description : "filler"
+        },
+        {   roomName : "room2",
+            id : 222222,
+            description : "filler2"
+        },
+        {   roomName : "room3",
+        id : 111111,
+        description : "description3 description3 description3 description3"
+    },
+    {   roomName : "room4",
+        id : 222222,
+        description : "filler4filler4444"
+    }
     ]
 
     response.json(roomData);
+});
+
+async function insertInDB(item) {
+    run().then( (db) => {
+        db.collection('rooms').insertOne(item);
+    })
+}
+
+app.post('/create', (request, response) => {
+    try {
+        //console.log(request.body)
+        insertInDB(request.body).then( () => {
+            response.send('Successfully created a new room.');
+        })
+    } catch(error) {
+        console.log(error);
+        response.sendStatus(500);
+    }
 });
 
 app.get('/:roomName', roomHandler.getRoom);

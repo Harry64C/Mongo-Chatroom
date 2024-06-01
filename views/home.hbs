@@ -11,6 +11,26 @@
 
             <div class = "content">
                 <h2>Create a new chatroom</h2>
+                <hr>
+
+                <form action = "http://localhost:8080/create" method = "POST">
+                    <div class = "form-group">
+                        <label for = "roomName">Room Name</label>
+                        <input class = "form-control" name = "roomName">
+                    </div>
+
+                    <div class = "form-group">
+                        <label for = "id">id</label>
+                        <input class = "form-control" name = "id">
+                    </div>
+
+                    <div class = "form-group">
+                        <label for = "description">Description</label>
+                        <input class = "form-control" name = "description">
+                    </div>
+
+                    <button type = "submit" class = "btn btn-primary">Submit</button>
+                </form>
             </div>
 
          </div>
@@ -18,7 +38,27 @@
 
             <div class = "content">
                 <h2>Join an existing chatroom</h2>
-                <div class = "row" id = "rooms"></div>
+                {{#if isAvailable}}
+                
+                <div class="row">
+                    {{#each rooms}} <!-- Goes through each room ("this") in rooms-->                    
+                        <div class = "col-6">
+                            <div class = "card">
+                                <div class = "card-body">
+                                    <h5 class = "card-title">{{this.roomName}}</h5>
+                                    <h6 class = "card-subtitle mb-2 text-muted">id: {{this.id}}</h6>
+                                    <div class="card-body">
+                                        <p class = "card-text">{{this.description}}<p>
+                                        <a type="button" href={{this.id}} class="btn btn-outline-dark">Enter Room</a>
+                                    </div>
+                                    
+                                </div>
+                            </div>
+                        </div>      
+                    
+                    {{/each}}
+                </ul>
+                {{/if}}
             </div>
 
          </div>
