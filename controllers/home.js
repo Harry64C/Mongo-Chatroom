@@ -1,6 +1,8 @@
 // Controller handler to handle functionality in home page
 
 
+const roomGenerator = require('../util/roomIdGenerator.js');
+
 async function loadRooms() { // fetches list of rooms from the server with GET
   let roomsList = []
 
@@ -19,7 +21,10 @@ async function loadRooms() { // fetches list of rooms from the server with GET
 function getHome(request, response){
   
   loadRooms().then(items => {
-    response.render('home', {title: 'home', rooms: items, isAvailable: true});
+    console.log(items)
+    response.render('home', {
+      title: 'home', rooms: items, isAvailable: true, newRoomId: roomGenerator.roomIdGenerator()
+    });
   });
 }
 

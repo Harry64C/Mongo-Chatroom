@@ -1,6 +1,96 @@
-<h1> Room </h1>
-<p>This is a demo of chatroom page</p>
-<p>
-    The room you are visiting is {{ roomName }}
-</p>
-<p>To generate a new room, here is the room id: {{ newRoomId }}</p>
+<div class = "container">
+    <h1>Chatroom {{ roomName }}</h1>
+
+    <div class = "row">
+        <div class = "col 8">
+            <div class = "content">
+                <p>Post a new message</p>
+                
+                <form action = "http://localhost:8080/message" method = "POST">
+
+                    <div class = "form-group">
+                        <label for = "message">
+                            Message
+                        </label>
+                        <input class = "form-control" name = "message" id = "message" onInput = "sendMessage()">
+                    </div>
+
+                    <div class = "hidden">
+
+                        <div class = "form-group">
+                            <input class = "form-control" name = "time" value = {{ time }}>
+                        </div>
+
+                        <div class = "form-group">
+                            <input class = "form-control" name = "roomID" value = {{ roomName }}>
+                        </div>
+
+                        <div class = "form-group">
+                            <input class = "form-control" name = "nickname" id = "nickname">
+                        </div>
+
+                    </div>
+
+
+                    <button type = "submit" class = "btn btn-primary">Submit</button>
+                </form>
+
+                
+            </div>
+        </div>
+
+        <div class = "col 4">
+            <div class = "content">
+                <b>Logged in as:</b>
+                <p id = "username"></p>
+                
+                <div class = "form-group">
+                    <input class = "form-control" onInput = "changeUsername(this.value)">
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+    <div class = "content">
+        <h3>Messages</h3>
+        {{#if isAvailable}}
+            <div class="row">
+            {{#each chats}} <!-- Goes through each chat ("this") in chats-->                    
+                <div class = "card">
+                    <div class = "card-body">
+                        <h5 class = "card-title">{{this.nickname}} at {{this.time}}pm:</h5>
+                        <p class = "card-body card-text">{{this.message}}</p>
+                    </div>
+                </div>
+            
+            {{/each}}
+            </div>
+
+        {{/if}}
+
+
+    </div>
+
+
+</div>
+
+
+<script>
+    function sendMessage() {
+        let user = document.getElementById('username').innerHTML;
+        console.log(user);
+        if (!user) {
+            alert("log in before posting!");
+            document.getElementById('message').value = '';
+        }
+    }
+
+    function changeUsername(value) {
+        document.getElementById('username').innerHTML = value;
+        document.getElementById('nickname').value = value;
+    }
+
+    
+</script>
+

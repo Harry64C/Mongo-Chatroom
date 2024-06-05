@@ -16,7 +16,6 @@ const bodyParser = require('body-parser')
     
     var db = client.db('Mongo-Chatroom');
     return db;
-    //await client.close();
   }
 
 // import handlers
@@ -37,48 +36,37 @@ app.engine('hbs', hbs({extname: 'hbs', defaultLayout: 'layout', layoutsDir: __di
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
-// set up stylesheets route
 
-// TODO: Add server side code
 
 // Create controller handlers to handle requests at each endpoint
 app.get('/', homeHandler.getHome);
 
 // create route for the room information
 app.get('/rooms', (request, response) => {
-    const roomData = [
-        {   roomName : "room1",
-            id : 111111,
-            description : "filler"
-        },
-        {   roomName : "room2",
-            id : 222222,
-            description : "filler2"
-        },
-        {   roomName : "room3",
-        id : 111111,
-        description : "description3 description3 description3 description3"
-    },
-    {   roomName : "room4",
-        id : 222222,
-        description : "filler4filler4444"
+    try {
+        run().then( (db) => {
+            const cursor = db.collection('rooms').find({}); // queries all rooms in the collection
+            cursor.toArray().then( (roomData) => {
+                // console.log(roomData);
+                response.json(roomData);
+            });
+        })
+    } catch(e) {
+        console.error(e);
     }
-    ]
-
-    response.json(roomData);
 });
 
-async function insertInDB(item) {
+async function insertInDB(table, item) {
     run().then( (db) => {
-        db.collection('rooms').insertOne(item);
+        db.collection(table).insertOne(item);
     })
 }
 
 app.post('/create', (request, response) => {
     try {
-        //console.log(request.body)
-        insertInDB(request.body).then( () => {
-            response.send('Successfully created a new room.');
+        insertInDB('rooms', request.body).then( () => {
+            console.log('Successfully created a new room.');
+            response.redirect('back')
         })
     } catch(error) {
         console.log(error);
@@ -86,7 +74,21 @@ app.post('/create', (request, response) => {
     }
 });
 
-app.get('/:roomName', roomHandler.getRoom);
+app.post('/message', (request, response) => {
+    try {
+        insertInDB('chats', request.body).then( () => {
+            console.log('Successfully posted a new message.');
+            response.redirect('back');
+        })
+    } catch(error) {
+        console.log(error);
+        response.sendStatus(500);
+    }
+});
+
+app.get('/:roomID', roomHandler.getRoom);
+
+
 
 
 const router = express.Router();

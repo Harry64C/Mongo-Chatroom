@@ -10,16 +10,23 @@ body {
 .content {
   text-align: left;
   padding: 8px 12px;
-  border-radius: 16px;
   border-color: grey;
   border-style: solid;
   border-width: 1px;
   background-color: rgb(235, 235, 235);
-  transition: 0.4s;
-  height: 550px;
+  max-height: 550px;
   overflow: scroll;
 }
 
 .content h2 {
   text-align: center;
+}
+
+.c {
+  height: 250px;
+  overflow: scroll;
+}
+
+.hidden {
+  display: none;
 }
