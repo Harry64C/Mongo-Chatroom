@@ -1,10 +1,12 @@
+<script>var path = "/room/{{id}}"</script>
+
 <div class = "container">
-    <h1>Chatroom {{ roomName }}</h1>
+    <h1>{{ roomName }}</h1>
 
     <div class = "row">
         <div class = "col 8">
             <div class = "content">
-                <p>Post a new message</p>
+                <h3>Post a new message</h3>
                 
                 <form action = "http://localhost:8080/message" method = "POST">
 
@@ -22,7 +24,7 @@
                         </div>
 
                         <div class = "form-group">
-                            <input class = "form-control" name = "roomID" value = {{ roomName }}>
+                            <input class = "form-control" name = "roomID" value = {{ id }}>
                         </div>
 
                         <div class = "form-group">
@@ -41,14 +43,27 @@
 
         <div class = "col 4">
             <div class = "content">
-                <b>Logged in as:</b>
+                <h3>Logged in as:</h3>
                 <p id = "username"></p>
                 
                 <div class = "form-group">
                     <input class = "form-control" onInput = "changeUsername(this.value)">
                 </div>
             </div>
+
+            <div class = "content">
+                <h3>Search Messages</h3>
+                
+                <div class = "form-group">
+                    <input class = "form-control" onInput = "searchMessages(this.value)">
+                    <a type = "button" id = "searchBtn" class = "btn btn-primary" href = '#'> Submit</a>
+                </div>
+            </div>
+
+
         </div>
+
+
     </div>
 
 
@@ -71,8 +86,6 @@
 
 
     </div>
-
-
 </div>
 
 
@@ -90,6 +103,18 @@
         document.getElementById('username').innerHTML = value;
         document.getElementById('nickname').value = value;
     }
+
+    function searchMessages(value) {
+        if (value) {
+            path = "/room/{{id}}?search=" + value;
+            document.getElementById('searchBtn').href = path;
+        }
+        else {
+            path = "/room/{{id}}";
+        }
+        document.getElementById('searchBtn').href = path;
+    }
+
 
     
 </script>

@@ -14,11 +14,21 @@ async function run() {
     return db;
   }
 
-async function loadChat(id) { // fetches chat messages from the server with GET
+async function loadChat(id, param) { // fetches chat messages from the server with GET
+    if (param) { // make regular expression out of passed in string
+        param = /^Test/
+    }
+    else { // if no valid search parameter match everything
+        param = /.+/
+    }
+    
     try {
         const db = await run();
-        const cursor = db.collection('chats').find({roomID : id})
-        const data = await cursor.toArray();
+        const cursor = db.collection('chats').find({
+            roomID : id,
+            message: { $regex: param }
+        });
+        let data = await cursor.toArray();
         console.log(data);
         return data;
     } catch(e) {
@@ -26,29 +36,32 @@ async function loadChat(id) { // fetches chat messages from the server with GET
     }
 }
 
-async function getRoom(id) { // fetches chat messages from the server with GET
+async function getRoomName(id) { // fetches chat messages from the server with GET
     try {
         const db = await run();
         const cursor = db.collection('rooms').find({id : id})
-        const data = await cursor.toArray();
-        data = data[0]
-        console.log(data);
-        return data;
+        let data = await cursor.toArray();
+        let name = data[0].roomName;
+        return name;
     } catch(e) {
             console.error(e);
     }
 }
+
 
 // Example for handle a get request at '/:roomName' endpoint.
 async function getRoom(request, response){
     id = request.params.roomID;
+    const name = await getRoomName(id);
     time = moment().get('hour') + ":" + moment().get('minute');
 
-    const chatData = await loadChat(id);
-    //const roomName = await getRoomName(id);
+    let queryString = '';
+    queryString = request.query.search;
+    
+    const chatData = await loadChat(id, queryString);
 
     response.render('room', {
-        title: 'chatroom', roomName: id, time: time, chats: chatData, isAvailable: true
+        title: 'chatroom', roomName: name, id: id, time: time, chats: chatData, isAvailable: true
     });
 }
 
