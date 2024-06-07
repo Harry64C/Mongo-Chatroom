@@ -15,10 +15,8 @@ async function run() {
   }
 
 async function loadChat(id, param) { // fetches chat messages from the server with GET
-    if (param) { // make regular expression out of passed in string
-        param = /^Test/
-    }
-    else { // if no valid search parameter match everything
+    
+    if (!param) { // if no valid search parameter match everything
         param = /.+/
     }
     
