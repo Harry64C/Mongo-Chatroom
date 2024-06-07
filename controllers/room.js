@@ -27,7 +27,7 @@ async function loadChat(id, param) { // fetches chat messages from the server wi
             message: { $regex: param }
         });
         let data = await cursor.toArray();
-        console.log(data);
+        // console.log(data);
         return data;
     } catch(e) {
             console.error(e);

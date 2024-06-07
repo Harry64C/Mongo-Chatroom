@@ -6,17 +6,7 @@ const path = require('path');
 
 require("dotenv").config();
 const { MongoClient, ServerApiVersion } = require('mongodb');
-const bodyParser = require('body-parser')
-
-
-  async function run() {
-    const client = new MongoClient(process.env.DATABASE_URL);
-    await client.connect()
-    .then(console.log("connected to database"))
-    
-    var db = client.db('Mongo-Chatroom');
-    return db;
-  }
+const { ObjectId } = require('mongodb');
 
 // import handlers
 const homeHandler = require('./controllers/home.js');
@@ -38,6 +28,39 @@ app.set('view engine', 'hbs');
 
 
 
+// -------- Database functions --------
+async function run() {
+    const client = new MongoClient(process.env.DATABASE_URL);
+    await client.connect()
+    .then(console.log("connected to database"))
+    
+    var db = client.db('Mongo-Chatroom');
+    return db;
+}
+
+async function insertInDB(table, item) {
+    try {
+        let db = await run();
+        db.collection(table).insertOne(item);
+    }
+    catch(e) {
+        console.error(e);
+    }
+}
+
+async function removeFromDB(table, id) {
+    try {
+        const db = await run();
+        db.collection(table).deleteOne( { _id: ObjectId.createFromHexString(id) });
+    }
+    catch(e) {
+        console.error(e);
+    }
+}
+
+
+
+
 // Create controller handlers to handle requests at each endpoint
 app.get('/', homeHandler.getHome);
 
@@ -56,11 +79,7 @@ app.get('/rooms', (request, response) => {
     }
 });
 
-async function insertInDB(table, item) {
-    run().then( (db) => {
-        db.collection(table).insertOne(item);
-    })
-}
+
 
 app.post('/create', (request, response) => {
     try {
@@ -68,11 +87,24 @@ app.post('/create', (request, response) => {
             console.log('Successfully created a new room.');
             response.redirect('back')
         })
-    } catch(error) {
-        console.log(error);
+    } catch(e) {
+        console.error(e);
         response.sendStatus(500);
     }
 });
+
+app.delete('/message/:id', (request, response) => {
+    let messageID = request.params.id;
+    try {
+        removeFromDB('chats', messageID).then( () => {
+            response.send('Message is deleted');
+        })
+    } catch(e) {
+        console.error(e);
+        response.sendStatus(500);
+    }
+});
+
 
 app.post('/message', (request, response) => {
     try {
