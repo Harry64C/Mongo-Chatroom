@@ -86,7 +86,8 @@ app.post('/message', (request, response) => {
     }
 });
 
-app.get('/:roomID', roomHandler.getRoom);
+
+app.get('/room/:roomID', roomHandler.getRoom);
 
 
 
