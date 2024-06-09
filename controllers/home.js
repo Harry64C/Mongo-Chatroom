@@ -21,7 +21,7 @@ async function loadRooms() { // fetches list of rooms from the server with GET
 function getHome(request, response){
   
   loadRooms().then(items => {
-    console.log(items)
+    // console.log(items)
     response.render('home', {
       title: 'home', rooms: items, isAvailable: true, newRoomId: roomGenerator.roomIdGenerator()
     });

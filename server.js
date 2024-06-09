@@ -58,6 +58,19 @@ async function removeFromDB(table, id) {
     }
 }
 
+async function editInDB(id, newContent) {
+    try {
+        const db = await run();
+        db.collection('chats').updateOne(
+            { _id: ObjectId.createFromHexString(id) }, 
+            { $set: { message: newContent } }
+        );
+    }
+    catch(e) {
+        console.error(e);
+    }
+}
+
 
 
 
@@ -81,7 +94,7 @@ app.get('/rooms', (request, response) => {
 
 
 
-app.post('/create', (request, response) => {
+app.post('/create', (request, response) => { // create room
     try {
         insertInDB('rooms', request.body).then( () => {
             console.log('Successfully created a new room.');
@@ -93,7 +106,7 @@ app.post('/create', (request, response) => {
     }
 });
 
-app.delete('/message/:id', (request, response) => {
+app.delete('/message/:id', (request, response) => { // delete message 
     let messageID = request.params.id;
     try {
         removeFromDB('chats', messageID).then( () => {
@@ -105,8 +118,21 @@ app.delete('/message/:id', (request, response) => {
     }
 });
 
+app.post('/edit', (request, response) => { // edit message 
+    let item = request.body;
+    try {
+        editInDB(item.msgID, item.message).then( () => {
+            console.log('Message is edited');
+            response.redirect('back');
+        })
+    } catch(e) {
+        console.error(e);
+        response.sendStatus(500);
+    }
+});
 
-app.post('/message', (request, response) => {
+
+app.post('/message', (request, response) => { // post chat message
     try {
         insertInDB('chats', request.body).then( () => {
             console.log('Successfully posted a new message.');
@@ -119,7 +145,7 @@ app.post('/message', (request, response) => {
 });
 
 
-app.get('/room/:roomID', roomHandler.getRoom);
+app.get('/room/:roomID', roomHandler.getRoom); // room handler
 
 
 
