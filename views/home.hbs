@@ -1,79 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
 <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Home Page</title>
+    <link rel="stylesheet" href="/public/css/style.css"> <!-- Ensure this path is correct -->
 </head>
 <body>
-    <div class = "container">
-        <h1> Home </h1>
+    <div class="container">
+        <h1>Home</h1>
         <p>This is the {{ title }} page</p>
 
-        <div class = "row">
-         <div class = "col">
-
-            <div class = "content">
-                <h2>Create a new chatroom</h2>
-                <hr>
-
-                <form action = "http://localhost:8080/create" method = "POST">
-                    <div class = "form-group">
-                        <label for = "roomName">Room Name</label>
-                        <input class = "form-control" name = "roomName">
-                    </div>
-
-                    <div class = "form-group">
-                        <label for = "id">
-                            id 
-                        </label>
-                        <input class = "form-control" name = "id" id = "roomID" onClick = "generate()">
-                    </div>
-
-                    <div class = "form-group">
-                        <label for = "description">Description</label>
-                        <input class = "form-control" name = "description">
-                    </div>
-
-                    <button type = "submit" class = "btn btn-primary">Submit</button>
-                </form>
+        <div class="row">
+            <div class="col">
+                <div class="content">
+                    <h2>Create a new chatroom</h2>
+                    <form action="http://localhost:8080/create" method="POST">
+                        <div class="form-group">
+                            <label for="roomName">Room Name</label>
+                            <input class="form-control" name="roomName" id="roomName">
+                        </div>
+                        <div class="form-group">
+                            <label for="id">ID</label>
+                            <input class="form-control" name="id" id="roomID" onClick="generate()">
+                        </div>
+                        <div class="form-group">
+                            <label for="description">Description</label>
+                            <input class="form-control" name="description" id="description">
+                        </div>
+                        <button type="submit" class="btn btn-primary">Submit</button>
+                    </form>
+                </div>
             </div>
-
-         </div>
-         <div class = "col">
-
-            <div class = "content">
-                <h2>Join an existing chatroom</h2>
-                {{#if isAvailable}}
-                
-                <div class="row">
-                    {{#each rooms}} <!-- Goes through each room ("this") in rooms-->                    
-                        <div class = "col-6">
-                            <div class = "card c">
-                                
-                                <div class = "card-body">
-                                    <h5 class = "card-title">{{this.roomName}}</h5>
-                                    <h6 class = "card-subtitle mb-2 text-muted">id: {{this.id}}</h6>
+            <div class="col">
+                <div class="content">
+                    <h2>Join an existing chatroom</h2>
+                    {{#if isAvailable}}
+                    <div class="row">
+                        {{#each rooms}} <!-- Goes through each room ("this") in rooms -->
+                        <div class="col">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">{{this.roomName}}</h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">ID: {{this.id}}</h6>
                                     <div class="card-body">
-                                        <p class = "card-text desc">{{this.description}}<p>
+                                        <p class="card-text desc">{{this.description}}</p>
                                         <a type="button" href="/room/{{this.id}}" class="btn btn-outline-dark">Enter Room</a>
                                     </div>
-                                    
                                 </div>
                             </div>
-                        </div>      
-                    
-                    {{/each}}
-                {{/if}}
+                        </div>
+                        {{/each}}
+                    </div>
+                    {{/if}}
+                </div>
             </div>
-
-         </div>
         </div>
-
     </div>
 
-<script>
-    function generate() { // adds a randomly generated roomID to the input box
-        document.getElementById('roomID').value = '{{ newRoomId }}'
-    }
-</script>
-
+    <script>
+        function generate() { // adds a randomly generated roomID to the input box
+            document.getElementById('roomID').value = '{{ newRoomId }}';
+        }
+    </script>
 </body>
-
-
+</html>
