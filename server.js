@@ -1,4 +1,3 @@
-// Import dependencies
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const hbs = require('express-handlebars');
@@ -20,7 +19,6 @@ async function run() {
     return db;
 }
 
-// Import handlers
 const homeHandler = require('./controllers/home.js');
 const roomHandler = require('./controllers/room.js');
 
@@ -32,19 +30,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// View engine setup
 app.engine('hbs', hbs({ extname: 'hbs', defaultLayout: 'layout', layoutsDir: __dirname + '/views/layouts/' }));
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
-// Add session middleware
 app.use(session({
     secret: 'your_secret_key',
     resave: false,
     saveUninitialized: true
 }));
 
-// Middleware to check if user is authenticated
 function isAuthenticated(req, res, next) {
     if (req.session.user) {
         next();
@@ -53,12 +48,10 @@ function isAuthenticated(req, res, next) {
     }
 }
 
-// Serve the login page
 app.get('/login', (req, res) => {
     res.render('login');
 });
 
-// Handle login submissions
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     const user = await getUserFromDatabase(username);
@@ -83,25 +76,22 @@ async function insertUser(username, password) {
     await db.collection('users').insertOne({ username, password: hashedPassword });
 }
 
-// Serve the registration page
 app.get('/register', (req, res) => {
     res.render('register');
 });
 
-// Handle registration submissions
 app.post('/register', async (req, res) => {
     const { username, password } = req.body;
     const user = await getUserFromDatabase(username);
 
     if (user) {
-        res.redirect('/register'); // User already exists
+        res.redirect('/register'); 
     } else {
         await insertUser(username, password);
-        res.redirect('/login'); // Redirect to login after successful registration
+        res.redirect('/login');
     }
 });
 
-// Create controller handlers to handle requests at each endpoint
 app.get('/', isAuthenticated, homeHandler.getHome);
 
 app.get('/rooms', isAuthenticated, (request, response) => {
@@ -154,7 +144,6 @@ app.get('/room/:roomID', isAuthenticated, roomHandler.getRoom);
 
 const router = express.Router();
 
-// Export the router
 module.exports = router;
 
 app.listen(port, () => console.log(`Server listening on http://localhost:${port}`));
