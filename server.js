@@ -1,24 +1,26 @@
-// import dependencies
+// Import dependencies
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const hbs = require('express-handlebars');
 const path = require('path');
+const bcrypt = require('bcrypt');
+const session = require('express-session');
 
 require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
-const bodyParser = require('body-parser')
+const { MongoClient } = require('mongodb');
+const bodyParser = require('body-parser');
 
-
-  async function run() {
+async function run() {
     const client = new MongoClient(process.env.DATABASE_URL);
     await client.connect()
-    .then(console.log("connected to database"))
+        .then(console.log("connected to database"))
+        .catch(err => console.error("Failed to connect to database", err));
     
     var db = client.db('Mongo-Chatroom');
     return db;
-  }
+}
 
-// import handlers
+// Import handlers
 const homeHandler = require('./controllers/home.js');
 const roomHandler = require('./controllers/room.js');
 
@@ -26,75 +28,133 @@ const app = express();
 const port = 8080;
 
 app.use(express.json());
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// If you choose not to use handlebars as template engine, you can safely delete the following part and use your own way to render content
-// view engine setup
-app.engine('hbs', hbs({extname: 'hbs', defaultLayout: 'layout', layoutsDir: __dirname + '/views/layouts/'}));
+// View engine setup
+app.engine('hbs', hbs({ extname: 'hbs', defaultLayout: 'layout', layoutsDir: __dirname + '/views/layouts/' }));
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
+// Add session middleware
+app.use(session({
+    secret: 'your_secret_key',
+    resave: false,
+    saveUninitialized: true
+}));
 
+// Middleware to check if user is authenticated
+function isAuthenticated(req, res, next) {
+    if (req.session.user) {
+        next();
+    } else {
+        res.redirect('/login');
+    }
+}
+
+// Serve the login page
+app.get('/login', (req, res) => {
+    res.render('login');
+});
+
+// Handle login submissions
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    const user = await getUserFromDatabase(username);
+
+    if (user && await bcrypt.compare(password, user.password)) {
+        req.session.user = user;
+        res.redirect('/');
+    } else {
+        res.render('login', { error: 'Invalid username or password' });
+    }
+});
+
+
+async function getUserFromDatabase(username) {
+    const db = await run();
+    return await db.collection('users').findOne({ username });
+}
+
+async function insertUser(username, password) {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const db = await run();
+    await db.collection('users').insertOne({ username, password: hashedPassword });
+}
+
+// Serve the registration page
+app.get('/register', (req, res) => {
+    res.render('register');
+});
+
+// Handle registration submissions
+app.post('/register', async (req, res) => {
+    const { username, password } = req.body;
+    const user = await getUserFromDatabase(username);
+
+    if (user) {
+        res.redirect('/register'); // User already exists
+    } else {
+        await insertUser(username, password);
+        res.redirect('/login'); // Redirect to login after successful registration
+    }
+});
 
 // Create controller handlers to handle requests at each endpoint
-app.get('/', homeHandler.getHome);
+app.get('/', isAuthenticated, homeHandler.getHome);
 
-// create route for the room information
-app.get('/rooms', (request, response) => {
+app.get('/rooms', isAuthenticated, (request, response) => {
     try {
-        run().then( (db) => {
-            const cursor = db.collection('rooms').find({}); // queries all rooms in the collection
-            cursor.toArray().then( (roomData) => {
-                // console.log(roomData);
+        run().then((db) => {
+            const cursor = db.collection('rooms').find({});
+            cursor.toArray().then((roomData) => {
                 response.json(roomData);
             });
         })
-    } catch(e) {
+    } catch (e) {
         console.error(e);
     }
 });
 
 async function insertInDB(table, item) {
-    run().then( (db) => {
-        db.collection(table).insertOne(item);
-    })
+    try {
+        const db = await run();
+        await db.collection(table).insertOne(item);
+        console.log(`Successfully inserted item into ${table}:`, item);
+    } catch (error) {
+        console.error(`Failed to insert item into ${table}:`, error);
+    }
 }
 
-app.post('/create', (request, response) => {
+app.post('/create', isAuthenticated, async (request, response) => {
     try {
-        insertInDB('rooms', request.body).then( () => {
-            console.log('Successfully created a new room.');
-            response.redirect('back')
-        })
-    } catch(error) {
+        console.log('Form Data:', request.body);
+        await insertInDB('rooms', request.body);
+        console.log('Successfully created a new room.');
+        response.redirect('back');
+    } catch (error) {
         console.log(error);
         response.sendStatus(500);
     }
 });
 
-app.post('/message', (request, response) => {
+app.post('/message', isAuthenticated, async (request, response) => {
     try {
-        insertInDB('chats', request.body).then( () => {
-            console.log('Successfully posted a new message.');
-            response.redirect('back');
-        })
-    } catch(error) {
+        await insertInDB('chats', request.body);
+        console.log('Successfully posted a new message.');
+        response.redirect('back');
+    } catch (error) {
         console.log(error);
         response.sendStatus(500);
     }
 });
 
-
-app.get('/room/:roomID', roomHandler.getRoom);
-
-
-
+app.get('/room/:roomID', isAuthenticated, roomHandler.getRoom);
 
 const router = express.Router();
 
-//Export the router
+// Export the router
 module.exports = router;
 
 app.listen(port, () => console.log(`Server listening on http://localhost:${port}`));
