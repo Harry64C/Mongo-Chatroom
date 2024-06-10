@@ -10,7 +10,6 @@ const { MongoClient, ObjectId, ServerApiVersion } = require('mongodb');
 const bodyParser = require('body-parser');
 const { body, validationResult, check } = require('express-validator');
 
-const { ObjectId } = require('mongodb');
 
 // import handlers
 
