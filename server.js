@@ -2,8 +2,10 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const hbs = require('express-handlebars');
 const path = require('path');
+const { body, validationResult, check } = require('express-validator');
 const bcrypt = require('bcrypt');
 const session = require('express-session');
+
 require("dotenv").config();
 
 const { MongoClient, ObjectId, ServerApiVersion } = require('mongodb');
@@ -15,6 +17,8 @@ const { body, validationResult, check } = require('express-validator');
 
 const homeHandler = require('./controllers/home.js');
 const roomHandler = require('./controllers/room.js');
+
+
 
 const app = express();
 const port = 8080;
@@ -53,6 +57,18 @@ async function insertInDB(table, item) {
         console.error(`Failed to insert item into ${table}:`, error);
     }
 }
+
+
+
+
+
+// app.use(express.json()) 
+// app.post('/form', [ 
+//     check('name').isLength({ min: 3 }).trim().escape(), check('email').isEmail().normalizeEmail(), 	check('age').isNumeric().trim().escape() 
+// ], (req, res) => { 	
+//     const name = req.body.name 
+//     const email = req.body.email 
+//     const age = req.body.age }) 
 
 
 // -------- Database functions --------
@@ -249,6 +265,23 @@ app.get('/rooms', isAuthenticated, (request, response) => {
 });
 
 
+// app.post('/create', [
+//     check('description').optional().trim().escape()
+// ], async (request, response) => {
+//     const errors = validationResult(request);
+//     if(!errors.isEmpty()){
+//         return response.status(400).json({ errors: errors.array() });
+//     }
+//     try {
+//         await insertInDB('rooms', req.body);
+//         console.log('Successfully created a new room.');
+//         res.redirect('back');
+//       } catch (e) {
+//         console.error(e);
+//         res.sendStatus(500);
+//       }
+// });
+
 
 
 app.post('/create', (request, response) => { // create room
@@ -275,6 +308,7 @@ app.delete('/message/:id', (request, response) => { // delete message
     }
 });
 
+/*
 app.post('/edit', (request, response) => { // edit message 
     let item = request.body;
     try {
@@ -287,19 +321,71 @@ app.post('/edit', (request, response) => { // edit message
         response.sendStatus(500);
     }
 });
+*/
+
+app.post('/edit', 
+    [
+        check('message').isLength({ min: 1 }).trim().escape()
+    ],
+    async (request, response) => {
+
+    const errors = validationResult(request);
+    const item = request.body;
 
 
-app.post('/message', isAuthenticated, async (request, response) => {
-
-    try {
-        await insertInDB('chats', request.body);
-        console.log('Successfully posted a new message.');
-        response.redirect('back');
-    } catch (error) {
-        console.log(error);
-        response.sendStatus(500);
+    if (!errors.isEmpty()) {
+      return response.status(400).json({errors: errors.array()});
     }
-});
+    
+    try {
+      await editInDB(item.msgID, item.message);
+      console.log('Message has been edited');
+      response.redirect('back');
+    } catch (e) {
+      console.error(e);
+      response.sendStatus(500);
+    }
+  });
+
+
+// app.post('/message', (request, response) => { // post chat message
+//     try {
+//         insertInDB('chats', request.body).then( () => {
+//             console.log('Successfully posted a new message.');
+//             response.redirect('back');
+//         })
+//     } catch(error) {
+//         console.log(error);
+//         response.sendStatus(500);
+//     }
+// });
+
+
+app.post('/message',
+    [
+        check('message').isLength({ min: 1 }).trim().escape(),
+    ], 
+    async (request, response) => { 
+
+        const errors = validationResult(request);
+
+        if (!errors.isEmpty()) {
+            return response.status(400).json({errors: errors.array()});
+        }
+
+        try {
+
+            await insertInDB('chats', request.body);
+            console.log('Message has been posted');
+            response.redirect('back');
+
+        } catch (error) {
+
+            console.log(error);
+            response.sendStatus(500);
+
+        }
+  });
 
 app.delete('/message/:id', isAuthenticated, async (request, response) => {
     const messageID = request.params.id;
