@@ -1,14 +1,11 @@
-// import dependencies
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const hbs = require('express-handlebars');
 const path = require('path');
-
-require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const bcrypt = require('bcrypt');
+const session = require('express-session');
+const { run } = require('./db'); // Update the import
 const { ObjectId } = require('mongodb');
-
-// import handlers
 const homeHandler = require('./controllers/home.js');
 const roomHandler = require('./controllers/room.js');
 
@@ -16,44 +13,100 @@ const app = express();
 const port = 8080;
 
 app.use(express.json());
-app.use(express.urlencoded({extended: true}));
+app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// If you choose not to use handlebars as template engine, you can safely delete the following part and use your own way to render content
-// view engine setup
-app.engine('hbs', hbs({extname: 'hbs', defaultLayout: 'layout', layoutsDir: __dirname + '/views/layouts/'}));
+app.engine('hbs', hbs({ extname: 'hbs', defaultLayout: 'layout', layoutsDir: path.join(__dirname, 'views', 'layouts') }));
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
+app.use(session({
+    secret: 'your_secret_key',
+    resave: false,
+    saveUninitialized: true
+}));
 
-
-// -------- Database functions --------
-async function run() {
-    const client = new MongoClient(process.env.DATABASE_URL);
-    await client.connect()
-    .then(console.log("connected to database"))
-    
-    var db = client.db('Mongo-Chatroom');
-    return db;
+function isAuthenticated(req, res, next) {
+    if (req.session.user) {
+        next();
+    } else {
+        res.redirect('/login');
+    }
 }
+
+app.get('/login', (req, res) => {
+    res.render('login');
+});
+
+app.post('/login', async (req, res) => {
+    const { username, password } = req.body;
+    const user = await getUserFromDatabase(username);
+
+    if (user && await bcrypt.compare(password, user.password)) {
+        req.session.user = user;
+        res.redirect('/');
+    } else {
+        res.render('login', { error: 'Invalid username or password' });
+    }
+});
+
+async function getUserFromDatabase(username) {
+    const db = await run();
+    return await db.collection('users').findOne({ username });
+}
+
+async function insertUser(username, password) {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const db = await run();
+    await db.collection('users').insertOne({ username, password: hashedPassword });
+}
+
+app.get('/register', (req, res) => {
+    res.render('register');
+});
+
+app.post('/register', async (req, res) => {
+    const { username, password } = req.body;
+    const user = await getUserFromDatabase(username);
+
+    if (user) {
+        res.redirect('/register');
+    } else {
+        await insertUser(username, password);
+        res.redirect('/login');
+    }
+});
+
+app.get('/', isAuthenticated, homeHandler.getHome);
+
+app.get('/rooms', isAuthenticated, async (request, response) => {
+    try {
+        const db = await run();
+        const cursor = db.collection('rooms').find({});
+        const roomData = await cursor.toArray();
+        response.json(roomData);
+    } catch (e) {
+        console.error(e);
+        response.status(500).send('Internal Server Error');
+    }
+});
 
 async function insertInDB(table, item) {
     try {
-        let db = await run();
-        db.collection(table).insertOne(item);
-    }
-    catch(e) {
-        console.error(e);
+        const db = await run();
+        await db.collection(table).insertOne(item);
+        console.log(`Successfully inserted item into ${table}:`, item);
+    } catch (error) {
+        console.error(`Failed to insert item into ${table}:`, error);
     }
 }
 
 async function removeFromDB(table, id) {
     try {
         const db = await run();
-        db.collection(table).deleteOne( { _id: ObjectId.createFromHexString(id) });
-    }
-    catch(e) {
+        await db.collection(table).deleteOne({ _id: ObjectId.createFromHexString(id) });
+    } catch (e) {
         console.error(e);
     }
 }
@@ -61,98 +114,64 @@ async function removeFromDB(table, id) {
 async function editInDB(id, newContent) {
     try {
         const db = await run();
-        db.collection('chats').updateOne(
-            { _id: ObjectId.createFromHexString(id) }, 
+        await db.collection('chats').updateOne(
+            { _id: ObjectId.createFromHexString(id) },
             { $set: { message: newContent } }
         );
-    }
-    catch(e) {
+    } catch (e) {
         console.error(e);
     }
 }
 
-
-
-
-// Create controller handlers to handle requests at each endpoint
-app.get('/', homeHandler.getHome);
-
-// create route for the room information
-app.get('/rooms', (request, response) => {
+app.post('/create', isAuthenticated, async (request, response) => {
     try {
-        run().then( (db) => {
-            const cursor = db.collection('rooms').find({}); // queries all rooms in the collection
-            cursor.toArray().then( (roomData) => {
-                // console.log(roomData);
-                response.json(roomData);
-            });
-        })
-    } catch(e) {
-        console.error(e);
-    }
-});
-
-
-
-app.post('/create', (request, response) => { // create room
-    try {
-        insertInDB('rooms', request.body).then( () => {
-            console.log('Successfully created a new room.');
-            response.redirect('back')
-        })
-    } catch(e) {
-        console.error(e);
-        response.sendStatus(500);
-    }
-});
-
-app.delete('/message/:id', (request, response) => { // delete message 
-    let messageID = request.params.id;
-    try {
-        removeFromDB('chats', messageID).then( () => {
-            response.send('Message is deleted');
-        })
-    } catch(e) {
-        console.error(e);
-        response.sendStatus(500);
-    }
-});
-
-app.post('/edit', (request, response) => { // edit message 
-    let item = request.body;
-    try {
-        editInDB(item.msgID, item.message).then( () => {
-            console.log('Message is edited');
-            response.redirect('back');
-        })
-    } catch(e) {
-        console.error(e);
-        response.sendStatus(500);
-    }
-});
-
-
-app.post('/message', (request, response) => { // post chat message
-    try {
-        insertInDB('chats', request.body).then( () => {
-            console.log('Successfully posted a new message.');
-            response.redirect('back');
-        })
-    } catch(error) {
+        await insertInDB('rooms', request.body);
+        console.log('Successfully created a new room.');
+        response.redirect('/');
+    } catch (error) {
         console.log(error);
         response.sendStatus(500);
     }
 });
 
+app.post('/message', isAuthenticated, async (request, response) => {
+    try {
+        await insertInDB('chats', request.body);
+        console.log('Successfully posted a new message.');
+        response.redirect('back');
+    } catch (error) {
+        console.log(error);
+        response.sendStatus(500);
+    }
+});
 
-app.get('/room/:roomID', roomHandler.getRoom); // room handler
+app.delete('/message/:id', isAuthenticated, async (request, response) => {
+    const messageID = request.params.id;
+    try {
+        await removeFromDB('chats', messageID);
+        response.send('Message is deleted');
+    } catch (e) {
+        console.error(e);
+        response.sendStatus(500);
+    }
+});
 
+app.post('/edit', isAuthenticated, async (request, response) => {
+    const item = request.body;
+    try {
+        await editInDB(item.msgID, item.message);
+        console.log('Message is edited');
+        response.redirect('back');
+    } catch (e) {
+        console.error(e);
+        response.sendStatus(500);
+    }
+});
 
-
+app.get('/room/:roomID', isAuthenticated, roomHandler.getRoom);
 
 const router = express.Router();
 
-//Export the router
-module.exports = router;
+module.exports = { router }; // No need to export `run` from here anymore
 
 app.listen(port, () => console.log(`Server listening on http://localhost:${port}`));
