@@ -101,13 +101,14 @@
                 <div class = "card">
                     <div class = "card-body">
                         <h5 class = "card-title">{{this.nickname}} at {{this.time}}pm:</h5>
-                        <p class = "card-body card-text">{{this.message}}</p>
+                        <p class = "message">{{this.message}}</p>
                     </div>
 
-                    <button type = "button" value = {{this._id}} onClick = "deleteMessage(this.value)" class = "btn btn-danger">Delete</button>
-                    
-                    <button type = "button" value = {{this._id}} onClick = "editMessage(this.value)" class = "btn btn-primary">Edit</button>
-
+                    <div id = "editDelete">
+                        <button type = "button" value = {{this._id}} onClick = "deleteMessage(this.value)" class = "btn btn-danger" id = "deleteButton">Delete</button>
+                        
+                        <button type = "button" value = {{this._id}} onClick = "editMessage(this.value)" class = "btn btn-primary" id = "editButton">Edit</button>
+                    </div>
                 </div>
             
             {{/each}}
