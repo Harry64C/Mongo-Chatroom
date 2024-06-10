@@ -10,7 +10,7 @@ require("dotenv").config();
 
 const { MongoClient, ObjectId, ServerApiVersion } = require('mongodb');
 const bodyParser = require('body-parser');
-const { body, validationResult, check } = require('express-validator');
+
 
 
 // import handlers
