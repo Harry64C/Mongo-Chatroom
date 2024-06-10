@@ -5,9 +5,14 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 const session = require('express-session');
 require("dotenv").config();
-const { MongoClient, ObjectId } = require('mongodb');
+
+const { MongoClient, ObjectId, ServerApiVersion } = require('mongodb');
 const bodyParser = require('body-parser');
 const { body, validationResult, check } = require('express-validator');
+
+const { ObjectId } = require('mongodb');
+
+// import handlers
 
 const homeHandler = require('./controllers/home.js');
 const roomHandler = require('./controllers/room.js');
@@ -50,14 +55,56 @@ async function insertInDB(table, item) {
     }
 }
 
-async function removeFromDB(table, id) {
+
+// -------- Database functions --------
+async function run() {
+    const client = new MongoClient(process.env.DATABASE_URL);
+    await client.connect()
+    .then(console.log("connected to database"))
+    
+    var db = client.db('Mongo-Chatroom');
+    return db;
+}
+
+async function insertInDB(table, item) {
     try {
-        const db = await run();
-        await db.collection(table).deleteOne({ _id: ObjectId.createFromHexString(id) });
-    } catch (e) {
+        let db = await run();
+        db.collection(table).insertOne(item);
+    }
+    catch(e) {
         console.error(e);
     }
 }
+
+async function removeFromDB(table, id) {
+    try {
+        const db = await run();
+        db.collection(table).deleteOne( { _id: ObjectId.createFromHexString(id) });
+    }
+    catch(e) {
+        console.error(e);
+    }
+}
+
+async function editInDB(id, newContent) {
+    try {
+        const db = await run();
+        db.collection('chats').updateOne(
+            { _id: ObjectId.createFromHexString(id) }, 
+            { $set: { message: newContent } }
+        );
+    }
+    catch(e) {
+        console.error(e);
+    }
+}
+
+
+
+
+// Create controller handlers to handle requests at each endpoint
+app.get('/', homeHandler.getHome);
+
 
 async function editInDB(id, newContent) {
     try {
@@ -202,18 +249,49 @@ app.get('/rooms', isAuthenticated, (request, response) => {
     }
 });
 
-app.post('/create', isAuthenticated, async (request, response) => {
+
+
+
+app.post('/create', (request, response) => { // create room
     try {
-        await insertInDB('rooms', request.body);
-        console.log('Successfully created a new room.');
-        response.redirect('back');
-    } catch (error) {
-        console.log(error);
+        insertInDB('rooms', request.body).then( () => {
+            console.log('Successfully created a new room.');
+            response.redirect('back')
+        })
+    } catch(e) {
+        console.error(e);
         response.sendStatus(500);
     }
 });
 
+app.delete('/message/:id', (request, response) => { // delete message 
+    let messageID = request.params.id;
+    try {
+        removeFromDB('chats', messageID).then( () => {
+            response.send('Message is deleted');
+        })
+    } catch(e) {
+        console.error(e);
+        response.sendStatus(500);
+    }
+});
+
+app.post('/edit', (request, response) => { // edit message 
+    let item = request.body;
+    try {
+        editInDB(item.msgID, item.message).then( () => {
+            console.log('Message is edited');
+            response.redirect('back');
+        })
+    } catch(e) {
+        console.error(e);
+        response.sendStatus(500);
+    }
+});
+
+
 app.post('/message', isAuthenticated, async (request, response) => {
+
     try {
         await insertInDB('chats', request.body);
         console.log('Successfully posted a new message.');
@@ -235,6 +313,7 @@ app.delete('/message/:id', isAuthenticated, async (request, response) => {
     }
 });
 
+
 app.post('/edit', isAuthenticated, async (request, response) => {
     const item = request.body;
     try {
@@ -246,6 +325,7 @@ app.post('/edit', isAuthenticated, async (request, response) => {
         response.sendStatus(500);
     }
 });
+
 
 app.get('/room/:roomID', isAuthenticated, roomHandler.getRoom);
 
