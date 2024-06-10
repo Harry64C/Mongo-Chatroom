@@ -1,4 +1,3 @@
-// Import dependencies
 const express = require('express');
 const cookieParser = require('cookie-parser');
 const hbs = require('express-handlebars');
@@ -9,7 +8,6 @@ require("dotenv").config();
 const { MongoClient, ObjectId } = require('mongodb');
 const bodyParser = require('body-parser');
 
-// Import handlers
 const homeHandler = require('./controllers/home.js');
 const roomHandler = require('./controllers/room.js');
 
@@ -21,19 +19,16 @@ app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// View engine setup
 app.engine('hbs', hbs({ extname: 'hbs', defaultLayout: 'layout', layoutsDir: __dirname + '/views/layouts/' }));
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
-// Add session middleware
 app.use(session({
     secret: 'your_secret_key',
     resave: false,
     saveUninitialized: true
 }));
 
-// Database functions
 async function run() {
     const client = new MongoClient(process.env.DATABASE_URL);
     await client.connect()
@@ -86,7 +81,6 @@ async function insertUser(username, password) {
     await db.collection('users').insertOne({ username, password: hashedPassword });
 }
 
-// Middleware to check if user is authenticated
 function isAuthenticated(req, res, next) {
     if (req.session.user) {
         next();
@@ -95,12 +89,10 @@ function isAuthenticated(req, res, next) {
     }
 }
 
-// Serve the login page
 app.get('/login', (req, res) => {
     res.render('login');
 });
 
-// Handle login submissions
 app.post('/login', async (req, res) => {
     const { username, password } = req.body;
     const user = await getUserFromDatabase(username);
@@ -113,12 +105,10 @@ app.post('/login', async (req, res) => {
     }
 });
 
-// Serve the registration page
 app.get('/register', (req, res) => {
     res.render('register');
 });
 
-// Handle registration submissions
 app.post('/register', async (req, res) => {
     const { username, password } = req.body;
     const user = await getUserFromDatabase(username);
@@ -131,10 +121,8 @@ app.post('/register', async (req, res) => {
     }
 });
 
-// Create controller handlers to handle requests at each endpoint
 app.get('/', isAuthenticated, homeHandler.getHome);
 
-// create route for the room information
 app.get('/rooms', isAuthenticated, (request, response) => {
     try {
         run().then((db) => {
@@ -148,7 +136,6 @@ app.get('/rooms', isAuthenticated, (request, response) => {
     }
 });
 
-// Create room
 app.post('/create', isAuthenticated, async (request, response) => {
     try {
         await insertInDB('rooms', request.body);
@@ -160,7 +147,6 @@ app.post('/create', isAuthenticated, async (request, response) => {
     }
 });
 
-// Post chat message
 app.post('/message', isAuthenticated, async (request, response) => {
     try {
         await insertInDB('chats', request.body);
@@ -172,7 +158,6 @@ app.post('/message', isAuthenticated, async (request, response) => {
     }
 });
 
-// Delete message
 app.delete('/message/:id', isAuthenticated, async (request, response) => {
     const messageID = request.params.id;
     try {
@@ -184,7 +169,6 @@ app.delete('/message/:id', isAuthenticated, async (request, response) => {
     }
 });
 
-// Edit message
 app.post('/edit', isAuthenticated, async (request, response) => {
     const item = request.body;
     try {
@@ -197,12 +181,11 @@ app.post('/edit', isAuthenticated, async (request, response) => {
     }
 });
 
-// Room handler
 app.get('/room/:roomID', isAuthenticated, roomHandler.getRoom);
 
 const router = express.Router();
 
-// Export the router
+
 module.exports = router;
 
 app.listen(port, () => console.log(`Server listening on http://localhost:${port}`));
