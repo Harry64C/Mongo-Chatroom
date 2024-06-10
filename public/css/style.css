@@ -9,6 +9,12 @@ body {
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
   height : 100%;
   width : 100%;
+  background-repeat: no-repeat;
+  background-size:cover;
+}
+
+html {
+  min-height : 100%;
 }
 
 
