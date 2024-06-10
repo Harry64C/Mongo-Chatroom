@@ -125,14 +125,20 @@ async function editInDB(id, newContent) {
 
 app.post('/create', isAuthenticated, async (request, response) => {
     try {
-        await insertInDB('rooms', request.body);
+        const room = {
+            roomName: request.body.roomName,
+            id: request.body.id
+        };
+        const db = await run();
+        await db.collection('rooms').insertOne(room);
         console.log('Successfully created a new room.');
-        response.redirect('/');
+        response.redirect(`/room/${room.id}`);
     } catch (error) {
         console.log(error);
         response.sendStatus(500);
     }
 });
+
 
 app.post('/message', isAuthenticated, async (request, response) => {
     try {
