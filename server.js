@@ -3,6 +3,7 @@ const express = require('express');
 const cookieParser = require('cookie-parser');
 const hbs = require('express-handlebars');
 const path = require('path');
+const { body, validationResult, check } = require('express-validator');
 
 require("dotenv").config();
 const { MongoClient, ServerApiVersion } = require('mongodb');
@@ -11,6 +12,8 @@ const { ObjectId } = require('mongodb');
 // import handlers
 const homeHandler = require('./controllers/home.js');
 const roomHandler = require('./controllers/room.js');
+
+
 
 const app = express();
 const port = 8080;
@@ -26,6 +29,18 @@ app.engine('hbs', hbs({extname: 'hbs', defaultLayout: 'layout', layoutsDir: __di
 app.set('views', path.join(__dirname, 'views'));
 app.set('view engine', 'hbs');
 
+
+
+
+
+
+// app.use(express.json()) 
+// app.post('/form', [ 
+//     check('name').isLength({ min: 3 }).trim().escape(), check('email').isEmail().normalizeEmail(), 	check('age').isNumeric().trim().escape() 
+// ], (req, res) => { 	
+//     const name = req.body.name 
+//     const email = req.body.email 
+//     const age = req.body.age }) 
 
 
 // -------- Database functions --------
@@ -93,6 +108,23 @@ app.get('/rooms', (request, response) => {
 });
 
 
+// app.post('/create', [
+//     check('description').optional().trim().escape()
+// ], async (request, response) => {
+//     const errors = validationResult(request);
+//     if(!errors.isEmpty()){
+//         return response.status(400).json({ errors: errors.array() });
+//     }
+//     try {
+//         await insertInDB('rooms', req.body);
+//         console.log('Successfully created a new room.');
+//         res.redirect('back');
+//       } catch (e) {
+//         console.error(e);
+//         res.sendStatus(500);
+//       }
+// });
+
 
 app.post('/create', (request, response) => { // create room
     try {
@@ -118,6 +150,7 @@ app.delete('/message/:id', (request, response) => { // delete message
     }
 });
 
+/*
 app.post('/edit', (request, response) => { // edit message 
     let item = request.body;
     try {
@@ -130,19 +163,70 @@ app.post('/edit', (request, response) => { // edit message
         response.sendStatus(500);
     }
 });
+*/
 
+app.post('/edit', 
+    [
+        check('message').isLength({ min: 1 }).trim().escape()
+    ],
+    async (request, response) => {
 
-app.post('/message', (request, response) => { // post chat message
-    try {
-        insertInDB('chats', request.body).then( () => {
-            console.log('Successfully posted a new message.');
-            response.redirect('back');
-        })
-    } catch(error) {
-        console.log(error);
-        response.sendStatus(500);
+    const errors = validationResult(request);
+    const item = request.body;
+
+    if (!errors.isEmpty()) {
+      return response.status(400).json({errors: errors.array()});
     }
-});
+    
+    try {
+      await editInDB(item.msgID, item.message);
+      console.log('Message has been edited');
+      response.redirect('back');
+    } catch (e) {
+      console.error(e);
+      response.sendStatus(500);
+    }
+  });
+
+
+// app.post('/message', (request, response) => { // post chat message
+//     try {
+//         insertInDB('chats', request.body).then( () => {
+//             console.log('Successfully posted a new message.');
+//             response.redirect('back');
+//         })
+//     } catch(error) {
+//         console.log(error);
+//         response.sendStatus(500);
+//     }
+// });
+
+
+app.post('/message',
+    [
+        check('message').isLength({ min: 1 }).trim().escape(),
+    ], 
+    async (request, response) => { 
+
+        const errors = validationResult(request);
+
+        if (!errors.isEmpty()) {
+            return response.status(400).json({errors: errors.array()});
+        }
+
+        try {
+
+            await insertInDB('chats', request.body);
+            console.log('Message has been posted');
+            response.redirect('back');
+
+        } catch (error) {
+
+            console.log(error);
+            response.sendStatus(500);
+
+        }
+  });
 
 
 app.get('/room/:roomID', roomHandler.getRoom); // room handler
