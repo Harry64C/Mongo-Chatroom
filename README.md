@@ -1,12 +1,36 @@
-# Assignment4 Concentrator
 
-## Project Description
-<!-- you can include known bugs, design decisions, external references used... -->
+## Welcome to Mongo Chatroom
 
-## Ethics Questions
+**How to Download Prerequisites** 
+>
+> 
+> First navigate into the directory of the Mongo Chatroom within the terminal
+>
+> This can be done with the command "cd (put directory here)"
+>
+> 
+> Open the terminal and enter the command "npm install"
 
-### Question 1
+<br>
 
-> Give two possible chatroom moderation features and the reasons that you should implement each one
+**How to set up .env**
+>
+> 
+> In the directory of the Mongo Chatroom, create a file named .env
+> Then enter
+>
+> DATABASE_URL = ""
+>
+> With your own database URL in between the quotation marks
 
-<!-- Put your answer to question 1 here -->
+
+<br>
+
+**How to run**
+>
+> 
+> Navigate into the directory of the Mongo Chatroom within the terminal
+>
+> 
+> Then run the command "npm start"
+
